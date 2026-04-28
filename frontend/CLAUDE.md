@@ -151,6 +151,46 @@ Agent({ subagent_type: "code-architect", prompt: "Design the officer review sect
 
 ## Skills
 
+### `/ui-ux-pro-max` ← USE WHENEVER BUILDING OR REVIEWING ANY UI
+**Use when**:
+- Designing or building any new page (operator application form, officer review queue, status dashboard)
+- Creating or refactoring any UI component (buttons, modals, forms, tables, status badges, file upload areas)
+- Choosing colour schemes, typography, spacing, or layout systems
+- Reviewing a component or page for visual quality, accessibility, or consistency
+- UI looks "not professional enough" but the reason is unclear
+- Implementing navigation, animations, or responsive behaviour
+- Pre-launch UI quality pass
+
+**Skip when**: Pure backend logic, API design, infrastructure, or non-visual automation.
+
+**Covers** (relevant to this stack):
+- 161 colour palettes + semantic colour token patterns
+- 57 font pairings with Next.js / Google Fonts integration
+- Accessibility rules: contrast 4.5:1, focus rings, aria-labels, keyboard nav, `prefers-reduced-motion`
+- Touch & interaction: 44×44px minimum tap targets, 8px+ spacing, loading feedback
+- Tailwind CSS 4 utility patterns and responsive breakpoints
+- Next.js-specific stack data (`data/stacks/nextjs.csv`) and React patterns (`data/stacks/react.csv`)
+- Form UX: visible labels, inline error messages, progressive disclosure
+- Animation: 150–300ms duration, spatial continuity, no layout-thrashing
+- 50+ named styles — glassmorphism, minimalism, bento grid, dark mode, flat design, etc.
+- 99 UX guidelines and 25 chart types
+
+**Priority order when applying** (follow 1 → 10):
+1. Accessibility (CRITICAL) — contrast, focus, keyboard, aria
+2. Touch & interaction (CRITICAL) — tap targets, feedback
+3. Performance (HIGH) — WebP/AVIF, lazy loading, CLS < 0.1
+4. Style selection (HIGH) — match government/admin product type
+5. Layout & responsive (HIGH) — mobile-first, no horizontal scroll
+6. Typography & colour (MEDIUM) — base 16px, line-height 1.5, semantic tokens
+7. Animation (MEDIUM) — purposeful, reduced-motion aware
+8. Forms & feedback (MEDIUM) — labels, inline errors, helper text
+9. Navigation patterns (HIGH) — predictable, deep-linkable
+10. Charts & data (LOW) — legends, tooltips, accessible colours
+
+> This skill lives at `.agents/skills/ui-ux-pro-max/` (symlinked). Invoke with `/ui-ux-pro-max`.
+
+---
+
 ### `/frontend-patterns`
 **Use when**: Building components, deciding on state management, handling data fetching, following Next.js App Router conventions, or managing client/server component boundaries.
 **Covers**: React patterns, Next.js App Router, state management, performance optimisation, UI best practices.
