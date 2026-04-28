@@ -1,8 +1,7 @@
 import type { ModelCtor } from "sequelize-typescript";
+import { ApplicationModel } from "./application.model.js";
+import { ApplicationDocument } from "./applicationDocument.model.js";
 
-// `ModelCtor` is a type annotation — `import type` is correct here.
-// When adding domain models, import the class as a value (not `import type`)
-// because emitDecoratorMetadata requires the class to exist at runtime.
-// Example: import { Application } from "./application.model.js";
+// Value imports (not `import type`) — emitDecoratorMetadata requires runtime class references.
 
-export const models: ModelCtor[] = [];
+export const models: ModelCtor[] = [ApplicationModel, ApplicationDocument];

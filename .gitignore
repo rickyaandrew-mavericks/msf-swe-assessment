@@ -11,6 +11,9 @@ entities.json
 # Build outputs
 dist/
 
+# Upload storage (local S3 substitute)
+backend/uploads/
+
 # Logs
 *.log
 npm-debug.log*
