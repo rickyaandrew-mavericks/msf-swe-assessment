@@ -6,7 +6,9 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("production"),
-  PORT: z.coerce.number().int().positive().default(3000),
+  PORT: z.coerce.number().int().positive().default(3001),
+  CORS_ORIGIN: z.string().min(1).default("http://localhost:3000"),
+  UPLOAD_DIR: z.string().min(1).default("./uploads"),
   DB_HOST: z.string().min(1),
   DB_PORT: z.coerce.number().int().positive().default(5432),
   DB_NAME: z.string().min(1),
