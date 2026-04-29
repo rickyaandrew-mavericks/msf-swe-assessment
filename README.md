@@ -1,3 +1,157 @@
+## Table of Contents
+
+- [Running the Application with Docker](#running-the-application-with-docker)
+  - [Prerequisites](#prerequisites)
+  - [Step 1 — Clone the repository](#step-1--clone-the-repository)
+  - [Step 2 — Create the environment file](#step-2--create-the-environment-file)
+  - [Step 3 — Build and start all services](#step-3--build-and-start-all-services)
+  - [Step 4 — Wait for all services to be healthy](#step-4--wait-for-all-services-to-be-healthy)
+  - [Step 5 — Open the application](#step-5--open-the-application)
+  - [Stopping the application](#stopping-the-application)
+  - [Troubleshooting](#troubleshooting)
+- [Tooling and Task Allocation](#tooling-and-task-allocation)
+  - [Agents Deployed](#agents-deployed)
+  - [Skills Utilized](#skills-utilized)
+- [Examples of Prompts and Instructions Given to the AI](#examples-of-prompts-and-instructions-given-to-the-ai)
+  - [Prompt Template](#prompt-template)
+  - [Example](#example)
+- [Validating and Correcting AI-Generated Output](#validating-and-correcting-ai-generated-output)
+  - [Pre-Execution Planning & Approval Gate](#pre-execution-planning--approval-gate)
+  - [Post-Execution Multi-Agent Review](#post-execution-multi-agent-review)
+- [Areas where AI was not helpful or produce code that I discard](#areas-where-ai-was-not-helpful-or-produce-code-that-i-discard)
+  - [Over-Engineering and "Model-Cost-Inducing" Complexity](#over-engineering-and-model-cost-inducing-complexity)
+  - [Hallucinated Library Versions or CSS Framework Quirks](#hallucinated-library-versions-or-css-framework-quirks)
+
+---
+
+## Running the Application with Docker
+
+The full stack (PostgreSQL → Backend API → Frontend) is fully containerised. Follow the steps below to get it running from scratch.
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- [Git](https://git-scm.com/) to clone the repository
+- Ports **3000**, **3001**, and **5432** free on your machine
+
+---
+
+### Step 1 — Clone the repository
+
+```bash
+git clone https://github.com/rickyaandrew-mavericks/msf-swe-assessment.git
+cd msf-swe-assessment
+```
+
+---
+
+### Step 2 — Create the environment file
+
+Docker Compose reads database credentials from a `.env` file at the project root. Copy the example and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set:
+
+```env
+POSTGRES_DB=msf_db
+POSTGRES_USER=msf_user
+POSTGRES_PASSWORD=your_password_here
+```
+
+> These values are used only inside Docker. They do not need to match any external service.
+
+---
+
+### Step 3 — Build and start all services
+
+```bash
+docker compose up -d --build
+```
+
+This command:
+
+1. Builds the **backend** image (compiles TypeScript)
+2. Builds the **frontend** image (Next.js production build)
+3. Starts **PostgreSQL**, waits until it is healthy
+4. Starts the **backend**, runs database migrations and seeds demo data, then starts the API server
+5. Waits until the backend passes its health check, then starts the **frontend**
+
+> The first build takes **1-3 minutes** as npm dependencies are installed and compiled. Subsequent starts (without `--build`) are much faster.
+
+---
+
+### Step 4 — Wait for all services to be healthy
+
+Monitor the startup progress with:
+
+```bash
+docker compose ps
+```
+
+Wait until all three services show `healthy` or `running`:
+
+```
+NAME            STATUS
+msf_postgres    running (healthy)
+msf_backend     running (healthy)
+msf_frontend    running
+```
+
+You can also stream the logs to watch migrations and seeding complete:
+
+```bash
+docker compose logs -f backend
+```
+
+Look for a line like `Server listening on port 3001` before proceeding.
+
+---
+
+### Step 5 — Open the application
+
+| Service      | URL                          |
+| ------------ | ---------------------------- |
+| Frontend     | http://localhost:3000        |
+| Backend API  | http://localhost:3001        |
+| Health check | http://localhost:3001/health |
+
+Navigate to **http://localhost:3000/all-applications** to see the seeded demo applications.
+
+---
+
+### Stopping the application
+
+```bash
+docker compose down
+```
+
+To also remove the database volume (wipes all data):
+
+```bash
+docker compose down -v
+```
+
+---
+
+### Troubleshooting
+
+**Frontend shows a blank page or server error on `/all-applications`**
+The backend may still be running migrations. Wait 30–60 seconds and refresh. Check `docker compose logs backend` for progress.
+
+**`ECONNREFUSED` in frontend logs**
+The frontend started before the backend was ready. Run `docker compose restart frontend` once the backend is healthy.
+
+**Port already in use**
+Stop any locally running instances of PostgreSQL (port 5432), the backend (port 3001), or the frontend dev server (port 3000) before starting Docker Compose.
+
+**Database changes not reflected after restart**
+The seeder runs only once per database volume (tracked in `SequelizeData` table). To re-seed from scratch, remove the volume: `docker compose down -v && docker compose up -d --build`.
+
+---
+
 ## Tooling and Task Allocation
 
 This assessment, I utilized Claude Code, orchestrating a multi-agent system where specialized agents (with skills) collaborate based on their designated roles.

@@ -1,3 +1,21 @@
+## Table of Contents
+
+- [Use case(s) or feature that is chosen to be built](#use-cases-or-feature-that-is-chosen-to-be-built)
+- [Use case(s) or features to defer or mock](#use-cases-or-features-to-defer-or-mock)
+  - [Mocked: Current User / Authentication & RBAC](#mocked-current-user--authentication--rbac)
+  - [Deferred: AI-Powered Features](#deferred-ai-powered-features)
+  - [Other features that are deferred](#other-features-that-are-deferred)
+    - [UI Drag-and-Drop Functionality](#ui-drag-and-drop-functionality)
+    - [Officer Support for Multiple Clarification Rounds](#officer-support-for-multiple-clarification-rounds)
+    - [On-Site Draft Saving & Offline Sync](#on-site-draft-saving--offline-sync)
+    - [Item-Level Comments per Checklist Section](#item-level-comments-per-checklist-section)
+- [Ambiguity and Assumptions](#ambiguity-and-assumptions)
+  - [No guidance on hosting, containerization, or CI/CD](#no-guidance-on-hosting-containerization-or-cicd)
+  - [Unclear what triggers status transitions](#unclear-what-triggers-status-transitions)
+- [Tech Stack and Architecture](#tech-stack-and-architecture)
+
+---
+
 ## Use case(s) or feature that is chosen to be built
 
 For this assessment, I have chosen to focus on the core licensing application and review workflow by selectively implementing key features from Use Case 1 (Operator) and Use Case 2 (Officer). The prioritized flow centers on an end-to-end process where an Operator submits a licensing application, an Officer reviews it and provides structured feedback, and both parties can track and respond to the application status.
