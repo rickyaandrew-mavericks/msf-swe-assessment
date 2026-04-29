@@ -37,6 +37,19 @@ export type ApplicationDocumentInfo = {
   sizeBytes: number;
 };
 
+export type UserInfo = {
+  id: string;
+  name: string;
+  role: string;
+};
+
+export type CommentInfo = {
+  id: string;
+  comment: string;
+  officer: UserInfo;
+  createdAt: string;
+};
+
 export type ApplicationDetail = {
   id: string;
   fullName: string;
@@ -57,6 +70,7 @@ export type ApplicationDetail = {
   createdAt: string;
   updatedAt: string;
   documents: ApplicationDocumentInfo[];
+  comments: CommentInfo[];
 };
 
 export type SubmissionSuccess = {

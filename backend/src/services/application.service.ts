@@ -5,6 +5,8 @@ import { sequelize } from "../config/sequelize.js";
 import { env } from "../config/env.js";
 import { ApplicationModel } from "../models/application.model.js";
 import { ApplicationDocument } from "../models/applicationDocument.model.js";
+import { CommentModel } from "../models/comment.model.js";
+import { UserModel } from "../models/user.model.js";
 import { applicationUploadDir, safeFilename } from "../utils/upload.js";
 import type { CreateApplicationBody } from "../utils/applicationSchema.js";
 import type {
@@ -12,6 +14,7 @@ import type {
   ApplicationDetail,
   ApplicationDocumentInfo,
   ApplicationDocumentMetadata,
+  CommentInfo,
 } from "../types/application.js";
 
 export type CreateApplicationResult = {
@@ -90,7 +93,7 @@ export async function createApplication(
         licenceType: body.licenceType,
         declarationAccuracy: body.declarationAccuracy,
         declarationConsent: body.declarationConsent,
-        status: "pending_pre_site_resubmission",
+        status: "submitted",
       },
       { transaction }
     );
@@ -157,7 +160,16 @@ export async function getApplicationById(
 ): Promise<ApplicationDetail | null> {
   const model = await ApplicationModel.findOne({
     where: { id },
-    include: [ApplicationDocument],
+    include: [
+      ApplicationDocument,
+      {
+        model: CommentModel,
+        include: [UserModel],
+      },
+    ],
+    order: [
+      [{ model: CommentModel, as: "comments" }, "createdAt", "DESC"],
+    ],
   });
   if (model === null) return null;
 
@@ -169,6 +181,17 @@ export async function getApplicationById(
       sizeBytes: doc.sizeBytes,
     })
   );
+
+  const comments: CommentInfo[] = (model.comments ?? []).map((c) => ({
+    id: c.id,
+    comment: c.comment,
+    officer: {
+      id: c.officer?.id ?? "",
+      name: c.officer?.name ?? "Unknown Officer",
+      role: c.officer?.role ?? "officer",
+    },
+    createdAt: c.createdAt,
+  }));
 
   return {
     id: model.id,
@@ -190,5 +213,6 @@ export async function getApplicationById(
     createdAt: model.createdAt,
     updatedAt: model.updatedAt,
     documents,
+    comments,
   };
 }
