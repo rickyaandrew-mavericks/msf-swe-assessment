@@ -1,15 +1,21 @@
 export const APPLICATION_STATUSES = [
-  "draft",
+  "application_received",
   "submitted",
   "under_review",
-  "pending_information",
-  "information_submitted",
-  "site_assessment_scheduled",
-  "site_assessment_completed",
+  "pending_pre_site_resubmission",
+  "pre_site_resubmitted",
+  "site_visit_scheduled",
+  "pending_site_visit",
+  "site_visit_done",
+  "pending_post_site_clarification",
+  "awaiting_post_site_clarification",
+  "pending_post_site_resubmission",
+  "post_site_clarification_resubmitted",
+  "post_site_resubmitted",
   "pending_approval",
+  "route_to_approval",
   "approved",
   "rejected",
-  "withdrawn",
 ] as const;
 
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
@@ -34,6 +40,17 @@ export type ApplicationDocumentMetadata = {
   storedPath: string;
   mimeType: string;
   sizeBytes: number;
+};
+
+export type ApplicationDocumentInfo = {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
+export type ApplicationDetail = Application & {
+  documents: ApplicationDocumentInfo[];
 };
 
 export type Application = {

@@ -1,6 +1,48 @@
 import type { Request, Response, NextFunction } from "express";
-import { createApplication } from "../services/application.service.js";
+import {
+  createApplication,
+  getApplications,
+  getApplicationById,
+} from "../services/application.service.js";
 import type { CreateApplicationBody } from "../utils/applicationSchema.js";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function getApplicationsHandler(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const applications = await getApplications();
+    res.json(applications);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getApplicationByIdHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params["id"];
+    if (typeof id !== "string" || !UUID_RE.test(id)) {
+      res.status(404).json({ message: "Application not found." });
+      return;
+    }
+    const application = await getApplicationById(id);
+    if (application === null) {
+      res.status(404).json({ message: "Application not found." });
+      return;
+    }
+    res.json(application);
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function createApplicationHandler(
   req: Request,

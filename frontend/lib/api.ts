@@ -1,4 +1,8 @@
-import type { SubmissionResult } from "@/types/application";
+import type {
+  ApplicationDetail,
+  ApplicationListItem,
+  SubmissionResult,
+} from "@/types/application";
 
 const API_BASE =
   process.env["NEXT_PUBLIC_API_BASE_URL"] ?? "http://localhost:3001";
@@ -13,6 +17,25 @@ type RawErrorBody = {
   errors?: Record<string, string[]>;
   message?: string;
 };
+
+export async function getApplications(): Promise<ApplicationListItem[]> {
+  const res = await fetch(`${API_BASE}/api/applications`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return (await res.json()) as ApplicationListItem[];
+}
+
+export async function getApplicationById(
+  id: string
+): Promise<ApplicationDetail | null> {
+  const res = await fetch(`${API_BASE}/api/applications/${id}`, {
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return (await res.json()) as ApplicationDetail;
+}
 
 export async function submitApplication(
   formData: FormData
