@@ -9,6 +9,7 @@ import {
 } from "sequelize-typescript";
 import type { ApplicationStatus, LicenceType, Gender } from "../types/application.js";
 import { ApplicationDocument } from "./applicationDocument.model.js";
+import { CommentModel } from "./comment.model.js";
 
 // Named ApplicationModel (not Application) to avoid shadowing the plain domain
 // type Application exported from src/types/application.ts.
@@ -59,7 +60,7 @@ export class ApplicationModel extends Model {
   @Column({ type: DataType.BOOLEAN, allowNull: false })
   declare declarationConsent: boolean;
 
-  @Column({ type: DataType.STRING(30), allowNull: false, defaultValue: "pending_pre_site_resubmission" })
+  @Column({ type: DataType.STRING(30), allowNull: false, defaultValue: "submitted" })
   declare status: ApplicationStatus;
 
   @CreatedAt
@@ -71,4 +72,7 @@ export class ApplicationModel extends Model {
   // undefined when association is not eagerly loaded via `include`
   @HasMany(() => ApplicationDocument)
   declare documents: ApplicationDocument[] | undefined;
+
+  @HasMany(() => CommentModel)
+  declare comments: CommentModel[] | undefined;
 }
