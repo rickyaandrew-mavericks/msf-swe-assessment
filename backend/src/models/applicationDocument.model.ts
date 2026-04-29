@@ -12,7 +12,7 @@ import { ApplicationModel } from "./application.model.js";
 
 @Table({ tableName: "application_documents", timestamps: true, underscored: true })
 export class ApplicationDocument extends Model {
-  @Column({ type: DataType.UUID, primaryKey: true })
+  @Column({ type: DataType.UUID, primaryKey: true, defaultValue: DataType.UUIDV4 })
   declare id: string;
 
   @ForeignKey(() => ApplicationModel)

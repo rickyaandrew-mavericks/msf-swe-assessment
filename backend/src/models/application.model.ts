@@ -15,7 +15,7 @@ import { CommentModel } from "./comment.model.js";
 // type Application exported from src/types/application.ts.
 @Table({ tableName: "applications", timestamps: true, underscored: true })
 export class ApplicationModel extends Model {
-  @Column({ type: DataType.UUID, primaryKey: true })
+  @Column({ type: DataType.UUID, primaryKey: true, defaultValue: DataType.UUIDV4 })
   declare id: string;
 
   @Column({ type: DataType.STRING(100), allowNull: false })
