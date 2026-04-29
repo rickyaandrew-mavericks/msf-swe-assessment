@@ -7,8 +7,12 @@ import {
   createApplicationHandler,
   getApplicationsHandler,
   getApplicationByIdHandler,
+  createCommentHandler,
 } from "../controllers/application.controller.js";
-import { createApplicationSchema } from "../utils/applicationSchema.js";
+import {
+  createApplicationSchema,
+  createCommentSchema,
+} from "../utils/applicationSchema.js";
 
 const router = Router();
 
@@ -23,7 +27,13 @@ router.post(
   validateMagicBytes,
   validateBody(createApplicationSchema),
   validateFiles,
-  createApplicationHandler
+  createApplicationHandler,
+);
+
+router.post(
+  "/:id/comments",
+  validateBody(createCommentSchema),
+  createCommentHandler,
 );
 
 export default router;

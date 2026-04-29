@@ -64,3 +64,10 @@ export const createApplicationSchema = z.object({
 export type CreateApplicationBody = z.infer<typeof createApplicationSchema>;
 
 export const applicationStatusSchema = z.enum(APPLICATION_STATUSES);
+
+export const createCommentSchema = z.object({
+  userId: z.string().uuid(),
+  comment: z.string().trim().min(1).max(250),
+});
+
+export type CreateCommentBody = z.infer<typeof createCommentSchema>;

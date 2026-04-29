@@ -8,7 +8,7 @@ import { ApplicationDocument } from "../models/applicationDocument.model.js";
 import { CommentModel } from "../models/comment.model.js";
 import { UserModel } from "../models/user.model.js";
 import { applicationUploadDir, safeFilename } from "../utils/upload.js";
-import type { CreateApplicationBody } from "../utils/applicationSchema.js";
+import type { CreateApplicationBody, CreateCommentBody } from "../utils/applicationSchema.js";
 import type {
   Application,
   ApplicationDetail,
@@ -35,12 +35,8 @@ export async function createApplication(
   const docMetas: ApplicationDocumentMetadata[] = [];
   const tempPaths: string[] = files.map((f) => f.path);
 
-  // Move files from _tmp to the application directory before the transaction,
-  // so that the paths stored in the DB are the final canonical paths.
   const usedFilenames = new Set<string>();
   for (const file of files) {
-    // Deduplicate within this upload batch to prevent overwriting a file with
-    // the same sanitised name (e.g. two files both called "doc.pdf").
     let filename = safeFilename(file.originalname);
     if (usedFilenames.has(filename)) {
       const ext = path.extname(filename);
@@ -55,7 +51,6 @@ export async function createApplication(
     try {
       await fsp.rename(file.path, dest);
     } catch (err) {
-      // rename fails across devices (EXDEV) — fall back to copy + delete
       if (err instanceof Error && (err as NodeJS.ErrnoException).code === "EXDEV") {
         await fsp.copyFile(file.path, dest);
         await fsp.rm(file.path, { force: true });
@@ -64,9 +59,6 @@ export async function createApplication(
       }
     }
     docMetas.push({
-      // Store the safeFilename output (already stripped to [\w\s.\-]) as the
-      // display name and a relative path so the DB is not coupled to the
-      // server's absolute upload directory.
       originalName: filename,
       storedPath: path.join(id, filename),
       mimeType: file.mimetype,
@@ -118,11 +110,9 @@ export async function createApplication(
     };
   } catch (err) {
     await transaction.rollback();
-    // Best-effort cleanup — remove files already moved to the application directory
     await fsp.rm(uploadDir, { recursive: true, force: true });
     throw err;
   } finally {
-    // Clean up any temp files that were not successfully moved
     for (const tmpPath of tempPaths) {
       await fsp.rm(tmpPath, { force: true }).catch(() => undefined);
     }
@@ -214,5 +204,36 @@ export async function getApplicationById(
     updatedAt: model.updatedAt,
     documents,
     comments,
+  };
+}
+
+export async function createComment(
+  applicationId: string,
+  body: CreateCommentBody
+): Promise<CommentInfo> {
+  const comment = await CommentModel.create({
+    id: randomUUID(),
+    applicationId,
+    officerId: body.userId,
+    comment: body.comment,
+  });
+
+  const fullComment = await CommentModel.findByPk(comment.id, {
+    include: [UserModel],
+  });
+
+  if (!fullComment) {
+    throw new Error("Failed to create comment");
+  }
+
+  return {
+    id: fullComment.id,
+    comment: fullComment.comment,
+    officer: {
+      id: fullComment.officer?.id ?? "",
+      name: fullComment.officer?.name ?? "Unknown Officer",
+      role: fullComment.officer?.role ?? "officer",
+    },
+    createdAt: fullComment.createdAt,
   };
 }
