@@ -7,6 +7,7 @@ interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>
   value: string;
   onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   error?: string[];
+  hint?: string;
   required?: boolean;
   rows?: number;
 }
@@ -18,12 +19,16 @@ export function Textarea({
   value,
   onChange,
   error,
+  hint,
   required = false,
   rows = 3,
   ...rest
 }: TextareaProps) {
   const hasError = error !== undefined && error.length > 0;
   const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy =
+    [hint ? hintId : null, hasError ? errorId : null].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className="flex flex-col gap-1">
@@ -37,6 +42,12 @@ export function Textarea({
         )}
       </label>
 
+      {hint && !hasError && (
+        <p id={hintId} className="text-xs text-secondary">
+          {hint}
+        </p>
+      )}
+
       <textarea
         id={id}
         name={name}
@@ -45,7 +56,7 @@ export function Textarea({
         required={required}
         rows={rows}
         aria-required={required}
-        aria-describedby={hasError ? errorId : undefined}
+        aria-describedby={describedBy}
         aria-invalid={hasError}
         className={[
           "w-full rounded-md border px-3 py-2",

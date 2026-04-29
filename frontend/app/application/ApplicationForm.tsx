@@ -11,6 +11,8 @@ import { FormSection } from "@/components/ui/FormSection";
 import { FileUploadList } from "@/components/domain/FileUploadList";
 import { submitApplication } from "@/lib/api";
 import { LICENCE_TYPES, GENDERS, DECLARATIONS } from "@/lib/applicationOptions";
+import { validateField, validateAll } from "@/lib/applicationSchema";
+import { FIELD_HINTS } from "@/lib/applicationHints";
 import type { ApplicationFormValues } from "@/types/application";
 
 const INITIAL_VALUES: ApplicationFormValues = {
@@ -34,6 +36,7 @@ export function ApplicationForm() {
   const [values, setValues] = useState<ApplicationFormValues>(INITIAL_VALUES);
   const [documents, setDocuments] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [touched, setTouched] = useState<Set<string>>(new Set());
   const [successId, setSuccessId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -42,7 +45,7 @@ export function ApplicationForm() {
     value: ApplicationFormValues[K]
   ) {
     setValues((prev) => ({ ...prev, [key]: value }));
-    // Clear field error on change
+    // Clear field error on change — re-validated on next blur
     if (errors[key] !== undefined) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -52,62 +55,83 @@ export function ApplicationForm() {
     }
   }
 
+  function handleBlur(field: keyof ApplicationFormValues) {
+    setTouched((prev) => new Set([...prev, field]));
+    const fieldErrors = validateField(field, values[field]);
+    if (fieldErrors !== null && fieldErrors.length > 0) {
+      setErrors((prev) => ({ ...prev, [field]: fieldErrors }));
+    }
+  }
+
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    // Mark all fields touched so errors show regardless of prior interaction
+    const allFields = Object.keys(INITIAL_VALUES) as (keyof ApplicationFormValues)[];
+    setTouched(new Set(allFields.map(String)));
+
+    // Client-side validation before hitting the network
+    const clientErrors = validateAll(values);
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      const firstKey = Object.keys(clientErrors)[0];
+      if (firstKey !== undefined) {
+        const el = document.getElementById(firstKey);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.focus();
+      }
+      return;
+    }
+
     startTransition(async () => {
       try {
-      const fd = new FormData();
+        const fd = new FormData();
 
-      // Text fields
-      fd.append("fullName", values.fullName);
-      fd.append("nricOrPassport", values.nricOrPassport);
-      fd.append("dateOfBirth", values.dateOfBirth);
-      fd.append("gender", values.gender);
-      fd.append("nationality", values.nationality);
-      fd.append("contactNumber", values.contactNumber);
-      fd.append("email", values.email);
-      fd.append("homeAddress", values.homeAddress);
-      fd.append("businessName", values.businessName);
-      fd.append("businessAddress", values.businessAddress);
-      fd.append("yearsInOperation", values.yearsInOperation);
-      fd.append("licenceType", values.licenceType);
-      // Declarations: backend expects string "true"
-      fd.append("declarationAccuracy", values.declarationAccuracy ? "true" : "false");
-      fd.append("declarationConsent", values.declarationConsent ? "true" : "false");
+        fd.append("fullName", values.fullName);
+        fd.append("nricOrPassport", values.nricOrPassport);
+        fd.append("dateOfBirth", values.dateOfBirth);
+        fd.append("gender", values.gender);
+        fd.append("nationality", values.nationality);
+        fd.append("contactNumber", values.contactNumber);
+        fd.append("email", values.email);
+        fd.append("homeAddress", values.homeAddress);
+        fd.append("businessName", values.businessName);
+        fd.append("businessAddress", values.businessAddress);
+        fd.append("yearsInOperation", values.yearsInOperation);
+        fd.append("licenceType", values.licenceType);
+        fd.append("declarationAccuracy", values.declarationAccuracy ? "true" : "false");
+        fd.append("declarationConsent", values.declarationConsent ? "true" : "false");
 
-      // Files
-      for (const file of documents) {
-        fd.append("documents", file);
-      }
+        for (const file of documents) {
+          fd.append("documents", file);
+        }
 
-      const result = await submitApplication(fd);
+        const result = await submitApplication(fd);
 
-      if (result.kind === "success") {
-        const UUID_RE =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!UUID_RE.test(result.id)) {
-          setErrors({ _root: ["An unexpected error occurred. Please try again."] });
+        if (result.kind === "success") {
+          const UUID_RE =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!UUID_RE.test(result.id)) {
+            setErrors({ _root: ["An unexpected error occurred. Please try again."] });
+            return;
+          }
+          setSuccessId(result.id);
           return;
         }
-        setSuccessId(result.id);
-        return;
-      }
 
-      if (result.kind === "validation") {
-        setErrors(result.errors);
-        // Scroll to first error
-        const firstErrorKey = Object.keys(result.errors)[0];
-        if (firstErrorKey !== undefined) {
-          const el = document.getElementById(firstErrorKey);
-          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-          el?.focus();
+        if (result.kind === "validation") {
+          setErrors(result.errors);
+          const firstErrorKey = Object.keys(result.errors)[0];
+          if (firstErrorKey !== undefined) {
+            const el = document.getElementById(firstErrorKey);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            el?.focus();
+          }
+          return;
         }
-        return;
-      }
 
-      // Server error
-      setErrors({ _root: [result.message] });
+        // Server or network error
+        setErrors({ _root: [result.message] });
       } catch {
         setErrors({ _root: ["An unexpected error occurred. Please try again."] });
       }
@@ -151,9 +175,10 @@ export function ApplicationForm() {
       onSubmit={handleSubmit}
       noValidate
       aria-label="Licence application form"
+      aria-busy={isPending}
       className="flex flex-col gap-6"
     >
-      {/* Root-level server error */}
+      {/* Root-level server or network error */}
       {errors["_root"] !== undefined && (
         <div role="alert" className="rounded-md border border-destructive bg-red-50 px-4 py-3 text-sm text-destructive">
           {errors["_root"][0]}
@@ -173,8 +198,11 @@ export function ApplicationForm() {
               name="fullName"
               value={values.fullName}
               onChange={(e) => setField("fullName", e.target.value)}
-              error={errors["fullName"]}
+              onBlur={() => handleBlur("fullName")}
+              error={touched.has("fullName") ? errors["fullName"] : undefined}
+              hint={FIELD_HINTS.fullName}
               required
+              disabled={isPending}
               autoComplete="name"
               placeholder="As shown on NRIC or passport"
             />
@@ -186,8 +214,11 @@ export function ApplicationForm() {
             name="nricOrPassport"
             value={values.nricOrPassport}
             onChange={(e) => setField("nricOrPassport", e.target.value)}
-            error={errors["nricOrPassport"]}
+            onBlur={() => handleBlur("nricOrPassport")}
+            error={touched.has("nricOrPassport") ? errors["nricOrPassport"] : undefined}
+            hint={FIELD_HINTS.nricOrPassport}
             required
+            disabled={isPending}
             placeholder="e.g. S1234567A"
           />
 
@@ -198,8 +229,11 @@ export function ApplicationForm() {
             type="date"
             value={values.dateOfBirth}
             onChange={(e) => setField("dateOfBirth", e.target.value)}
-            error={errors["dateOfBirth"]}
+            onBlur={() => handleBlur("dateOfBirth")}
+            error={touched.has("dateOfBirth") ? errors["dateOfBirth"] : undefined}
+            hint={FIELD_HINTS.dateOfBirth}
             required
+            disabled={isPending}
             max={new Date().toISOString().split("T")[0]}
           />
 
@@ -209,9 +243,12 @@ export function ApplicationForm() {
             name="gender"
             value={values.gender}
             onChange={(e) => setField("gender", e.target.value)}
+            onBlur={() => handleBlur("gender")}
             options={GENDERS}
-            error={errors["gender"]}
+            error={touched.has("gender") ? errors["gender"] : undefined}
+            hint={FIELD_HINTS.gender}
             required
+            disabled={isPending}
             placeholder="Select gender"
           />
 
@@ -221,8 +258,11 @@ export function ApplicationForm() {
             name="nationality"
             value={values.nationality}
             onChange={(e) => setField("nationality", e.target.value)}
-            error={errors["nationality"]}
+            onBlur={() => handleBlur("nationality")}
+            error={touched.has("nationality") ? errors["nationality"] : undefined}
+            hint={FIELD_HINTS.nationality}
             required
+            disabled={isPending}
             autoComplete="country-name"
             placeholder="e.g. Singaporean"
           />
@@ -234,8 +274,11 @@ export function ApplicationForm() {
             type="tel"
             value={values.contactNumber}
             onChange={(e) => setField("contactNumber", e.target.value)}
-            error={errors["contactNumber"]}
+            onBlur={() => handleBlur("contactNumber")}
+            error={touched.has("contactNumber") ? errors["contactNumber"] : undefined}
+            hint={FIELD_HINTS.contactNumber}
             required
+            disabled={isPending}
             autoComplete="tel"
             placeholder="e.g. 91234567 or +65 9123 4567"
           />
@@ -247,8 +290,11 @@ export function ApplicationForm() {
             type="email"
             value={values.email}
             onChange={(e) => setField("email", e.target.value)}
-            error={errors["email"]}
+            onBlur={() => handleBlur("email")}
+            error={touched.has("email") ? errors["email"] : undefined}
+            hint={FIELD_HINTS.email}
             required
+            disabled={isPending}
             autoComplete="email"
             placeholder="your@email.com"
           />
@@ -266,8 +312,11 @@ export function ApplicationForm() {
           name="homeAddress"
           value={values.homeAddress}
           onChange={(e) => setField("homeAddress", e.target.value)}
-          error={errors["homeAddress"]}
+          onBlur={() => handleBlur("homeAddress")}
+          error={touched.has("homeAddress") ? errors["homeAddress"] : undefined}
+          hint={FIELD_HINTS.homeAddress}
           required
+          disabled={isPending}
           rows={3}
           autoComplete="street-address"
           placeholder="Block/Unit number, Street name, Postal code"
@@ -287,8 +336,11 @@ export function ApplicationForm() {
               name="businessName"
               value={values.businessName}
               onChange={(e) => setField("businessName", e.target.value)}
-              error={errors["businessName"]}
+              onBlur={() => handleBlur("businessName")}
+              error={touched.has("businessName") ? errors["businessName"] : undefined}
+              hint={FIELD_HINTS.businessName}
               required
+              disabled={isPending}
               autoComplete="organization"
               placeholder="Registered name of the organisation"
             />
@@ -301,8 +353,11 @@ export function ApplicationForm() {
               name="businessAddress"
               value={values.businessAddress}
               onChange={(e) => setField("businessAddress", e.target.value)}
-              error={errors["businessAddress"]}
+              onBlur={() => handleBlur("businessAddress")}
+              error={touched.has("businessAddress") ? errors["businessAddress"] : undefined}
+              hint={FIELD_HINTS.businessAddress}
               required
+              disabled={isPending}
               rows={3}
               placeholder="Block/Unit number, Street name, Postal code"
             />
@@ -315,8 +370,11 @@ export function ApplicationForm() {
             type="number"
             value={values.yearsInOperation}
             onChange={(e) => setField("yearsInOperation", e.target.value)}
-            error={errors["yearsInOperation"]}
+            onBlur={() => handleBlur("yearsInOperation")}
+            error={touched.has("yearsInOperation") ? errors["yearsInOperation"] : undefined}
+            hint={FIELD_HINTS.yearsInOperation}
             required
+            disabled={isPending}
             min={0}
             max={100}
             placeholder="0"
@@ -335,9 +393,12 @@ export function ApplicationForm() {
           name="licenceType"
           value={values.licenceType}
           onChange={(e) => setField("licenceType", e.target.value)}
+          onBlur={() => handleBlur("licenceType")}
           options={LICENCE_TYPES}
-          error={errors["licenceType"]}
+          error={touched.has("licenceType") ? errors["licenceType"] : undefined}
+          hint={FIELD_HINTS.licenceType}
           required
+          disabled={isPending}
           placeholder="Select licence type"
         />
       </FormSection>
@@ -345,17 +406,18 @@ export function ApplicationForm() {
       {/* Section 5: Supporting Documents */}
       <FormSection
         title="Supporting Documents"
-        description="Upload all relevant supporting documents in PDF format. At least one document is required."
+        description="Optionally upload supporting documents in PDF format. PDF only, max 10 MB per file, up to 5 files."
       >
         <div>
           <p className="text-sm font-medium text-foreground mb-2">
             Upload Documents
-            <span className="text-destructive ml-1" aria-hidden="true">*</span>
+            <span className="text-xs text-secondary font-normal ml-2">(optional)</span>
           </p>
           <FileUploadList
             files={documents}
             onChange={setDocuments}
             error={errors["documents"]}
+            disabled={isPending}
           />
         </div>
       </FormSection>
@@ -370,17 +432,25 @@ export function ApplicationForm() {
           id="declarationAccuracy"
           name="declarationAccuracy"
           checked={values.declarationAccuracy}
-          onChange={(e) => setField("declarationAccuracy", e.target.checked)}
+          onChange={(e) => {
+            setField("declarationAccuracy", e.target.checked);
+            setTouched((prev) => new Set([...prev, "declarationAccuracy"]));
+          }}
           label={DECLARATIONS.accuracy}
-          error={errors["declarationAccuracy"]}
+          error={touched.has("declarationAccuracy") ? errors["declarationAccuracy"] : undefined}
+          disabled={isPending}
         />
         <Checkbox
           id="declarationConsent"
           name="declarationConsent"
           checked={values.declarationConsent}
-          onChange={(e) => setField("declarationConsent", e.target.checked)}
+          onChange={(e) => {
+            setField("declarationConsent", e.target.checked);
+            setTouched((prev) => new Set([...prev, "declarationConsent"]));
+          }}
           label={DECLARATIONS.consent}
-          error={errors["declarationConsent"]}
+          error={touched.has("declarationConsent") ? errors["declarationConsent"] : undefined}
+          disabled={isPending}
         />
       </FormSection>
 
@@ -389,7 +459,7 @@ export function ApplicationForm() {
         <p className="text-xs text-secondary">
           By submitting, you confirm that all information provided is accurate.
         </p>
-        <Button type="submit" isLoading={isPending} className="sm:w-auto w-full">
+        <Button type="submit" isLoading={isPending} disabled={isPending} className="sm:w-auto w-full">
           Submit Application
         </Button>
       </div>

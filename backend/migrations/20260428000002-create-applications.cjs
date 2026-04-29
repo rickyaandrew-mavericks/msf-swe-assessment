@@ -1,17 +1,23 @@
 "use strict";
 
 const APPLICATION_STATUSES = [
-  "draft",
+  "application_received",
   "submitted",
   "under_review",
-  "pending_information",
-  "information_submitted",
-  "site_assessment_scheduled",
-  "site_assessment_completed",
+  "pending_pre_site_resubmission",
+  "pre_site_resubmitted",
+  "site_visit_scheduled",
+  "pending_site_visit",
+  "site_visit_done",
+  "pending_post_site_clarification",
+  "awaiting_post_site_clarification",
+  "pending_post_site_resubmission",
+  "post_site_clarification_resubmitted",
+  "post_site_resubmitted",
   "pending_approval",
+  "route_to_approval",
   "approved",
   "rejected",
-  "withdrawn",
 ];
 
 const LICENCE_TYPES = [
@@ -110,19 +116,19 @@ module.exports = {
 
     // CHECK constraints
     await queryInterface.sequelize.query(
-      `ALTER TABLE applications ADD CONSTRAINT chk_applications_gender CHECK (gender IN (${GENDERS.map((g) => `'${g}'`).join(", ")}))`
+      `ALTER TABLE applications ADD CONSTRAINT chk_applications_gender CHECK (gender IN (${GENDERS.map((g) => `'${g}'`).join(", ")}))`,
     );
     await queryInterface.sequelize.query(
-      `ALTER TABLE applications ADD CONSTRAINT chk_applications_licence_type CHECK (licence_type IN (${LICENCE_TYPES.map((l) => `'${l}'`).join(", ")}))`
+      `ALTER TABLE applications ADD CONSTRAINT chk_applications_licence_type CHECK (licence_type IN (${LICENCE_TYPES.map((l) => `'${l}'`).join(", ")}))`,
     );
     await queryInterface.sequelize.query(
-      `ALTER TABLE applications ADD CONSTRAINT chk_applications_status CHECK (status IN (${APPLICATION_STATUSES.map((s) => `'${s}'`).join(", ")}))`
+      `ALTER TABLE applications ADD CONSTRAINT chk_applications_status CHECK (status IN (${APPLICATION_STATUSES.map((s) => `'${s}'`).join(", ")}))`,
     );
     await queryInterface.sequelize.query(
-      "ALTER TABLE applications ADD CONSTRAINT chk_applications_years CHECK (years_in_operation BETWEEN 0 AND 100)"
+      "ALTER TABLE applications ADD CONSTRAINT chk_applications_years CHECK (years_in_operation BETWEEN 0 AND 100)",
     );
     await queryInterface.sequelize.query(
-      "ALTER TABLE applications ADD CONSTRAINT chk_applications_declarations CHECK (declaration_accuracy = TRUE AND declaration_consent = TRUE)"
+      "ALTER TABLE applications ADD CONSTRAINT chk_applications_declarations CHECK (declaration_accuracy = TRUE AND declaration_consent = TRUE)",
     );
 
     // Indexes
