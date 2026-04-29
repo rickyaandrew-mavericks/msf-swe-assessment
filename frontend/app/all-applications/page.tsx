@@ -11,7 +11,7 @@ export default async function AllApplicationsPage() {
   const applications = await getApplications();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <header className="bg-primary border-b border-primary/20">
         <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
@@ -43,7 +43,7 @@ export default async function AllApplicationsPage() {
         </div>
       </header>
 
-      <main id="main-content" className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <main id="main-content" className="flex-1 mx-auto max-w-5xl w-full px-4 py-8 sm:px-6">
         <nav aria-label="Breadcrumb" className="mb-6">
           <ol className="flex items-center gap-2 text-sm text-secondary">
             <li>

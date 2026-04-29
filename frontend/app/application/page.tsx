@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function ApplicationPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Portal header */}
       <header className="bg-primary border-b border-primary/20">
         <div className="mx-auto max-w-4xl px-4 py-4 sm:px-6">
@@ -30,7 +30,7 @@ export default function ApplicationPage() {
         </div>
       </header>
 
-      <main id="main-content" className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <main id="main-content" className="flex-1 mx-auto max-w-4xl w-full px-4 py-8 sm:px-6">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-6">
           <ol className="flex items-center gap-2 text-sm text-secondary">

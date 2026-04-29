@@ -2,6 +2,7 @@ import type {
   ApplicationDetail,
   ApplicationListItem,
   SubmissionResult,
+  CommentInfo,
 } from "@/types/application";
 
 const API_BASE =
@@ -35,6 +36,23 @@ export async function getApplicationById(
   if (res.status === 404) return null;
   if (!res.ok) return null;
   return (await res.json()) as ApplicationDetail;
+}
+
+export async function createComment(
+  applicationId: string,
+  userId: string,
+  comment: string
+): Promise<CommentInfo | null> {
+  const res = await fetch(`${API_BASE}/api/applications/${applicationId}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ userId, comment }),
+  });
+
+  if (!res.ok) return null;
+  return (await res.json()) as CommentInfo;
 }
 
 export async function submitApplication(
