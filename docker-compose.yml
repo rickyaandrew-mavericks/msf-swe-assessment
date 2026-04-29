@@ -17,5 +17,53 @@ services:
       retries: 10
       start_period: 10s
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: msf_backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+      UPLOAD_DIR: ./uploads
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "3001:3001"
+    volumes:
+      - msf_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      # Long start_period covers migrate + seed time before health checks begin
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the Next.js client bundle at build time (browser → host)
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+    container_name: msf_frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # Runtime server-side URL (Next.js SSR/RSC → Docker internal network)
+      API_BASE_URL: http://backend:3001
+    ports:
+      - "3000:3000"
+
 volumes:
   msf_pg_data:
+  msf_uploads:

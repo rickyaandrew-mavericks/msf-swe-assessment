@@ -5,8 +5,13 @@ import type {
   CommentInfo,
 } from "@/types/application";
 
+// API_BASE_URL (no NEXT_PUBLIC_) is a server-only runtime var pointing to the
+// Docker-internal backend hostname. NEXT_PUBLIC_API_BASE_URL is baked into the
+// client bundle at build time and used by browser-side fetches.
 const API_BASE =
-  process.env["NEXT_PUBLIC_API_BASE_URL"] ?? "http://localhost:3001";
+  process.env["API_BASE_URL"] ??
+  process.env["NEXT_PUBLIC_API_BASE_URL"] ??
+  "http://localhost:3001";
 
 type RawSuccessBody = {
   id: string;

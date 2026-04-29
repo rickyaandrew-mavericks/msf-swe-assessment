@@ -15,6 +15,9 @@ const base = {
   port: Number(process.env["DB_PORT"] ?? 5432),
   dialect: "postgres",
   pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
+  // Track which seeders have run so docker compose up doesn't re-seed on restart
+  seederStorage: "sequelize",
+  seederStorageTableName: "SequelizeData",
 };
 
 module.exports = {
