@@ -2,7 +2,6 @@ import path from "node:path";
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
 export const MAX_FILES = 5;
-export const MIN_FILES = 1;
 export const ACCEPTED_MIME = "application/pdf";
 
 // First 5 bytes of every well-formed PDF file: "%PDF-"

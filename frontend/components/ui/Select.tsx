@@ -1,4 +1,4 @@
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, FocusEvent } from "react";
 
 interface SelectProps {
   label: string;
@@ -6,10 +6,13 @@ interface SelectProps {
   name: string;
   value: string;
   onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
+  onBlur?: (e: FocusEvent<HTMLSelectElement>) => void;
   options: readonly string[];
   error?: string[];
+  hint?: string;
   required?: boolean;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export function Select({
@@ -18,13 +21,19 @@ export function Select({
   name,
   value,
   onChange,
+  onBlur,
   options,
   error,
+  hint,
   required = false,
   placeholder = "Select an option",
+  disabled = false,
 }: SelectProps) {
   const hasError = error !== undefined && error.length > 0;
   const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy =
+    [hint ? hintId : null, hasError ? errorId : null].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className="flex flex-col gap-1">
@@ -38,20 +47,29 @@ export function Select({
         )}
       </label>
 
+      {hint && !hasError && (
+        <p id={hintId} className="text-xs text-secondary">
+          {hint}
+        </p>
+      )}
+
       <select
         id={id}
         name={name}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         required={required}
+        disabled={disabled}
         aria-required={required}
-        aria-describedby={hasError ? errorId : undefined}
+        aria-describedby={describedBy}
         aria-invalid={hasError}
         className={[
           "min-h-[44px] w-full rounded-md border px-3 py-2",
           "bg-white text-foreground text-base",
           "cursor-pointer transition-colors duration-150",
           "focus:outline-none focus:ring-2 focus:ring-offset-0",
+          "disabled:cursor-not-allowed disabled:opacity-50",
           hasError
             ? "border-destructive focus:ring-destructive/30"
             : "border-border focus:border-accent focus:ring-accent/20",

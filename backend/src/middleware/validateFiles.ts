@@ -1,19 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
-import { MAX_FILES, MIN_FILES, ACCEPTED_MIME, MAX_FILE_BYTES } from "../utils/upload.js";
+import { MAX_FILES, ACCEPTED_MIME, MAX_FILE_BYTES } from "../utils/upload.js";
 
 export function validateFiles(
   req: Request,
   res: Response,
   next: NextFunction
 ): void {
-  const files = req.files;
-
-  if (!Array.isArray(files) || files.length < MIN_FILES) {
-    res.status(400).json({
-      errors: { documents: ["At least one PDF document is required."] },
-    });
-    return;
-  }
+  const files = Array.isArray(req.files) ? req.files : [];
 
   if (files.length > MAX_FILES) {
     res.status(400).json({

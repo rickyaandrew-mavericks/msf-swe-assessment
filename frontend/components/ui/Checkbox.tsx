@@ -7,6 +7,7 @@ interface CheckboxProps {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   label: ReactNode;
   error?: string[];
+  disabled?: boolean;
 }
 
 export function Checkbox({
@@ -16,6 +17,7 @@ export function Checkbox({
   onChange,
   label,
   error,
+  disabled = false,
 }: CheckboxProps) {
   const hasError = error !== undefined && error.length > 0;
   const errorId = `${id}-error`;
@@ -29,11 +31,13 @@ export function Checkbox({
           type="checkbox"
           checked={checked}
           onChange={onChange}
+          disabled={disabled}
           aria-describedby={hasError ? errorId : undefined}
           aria-invalid={hasError}
           className={[
             "mt-1 h-5 w-5 min-w-[20px] rounded border cursor-pointer",
             "accent-accent transition-colors duration-150",
+            "disabled:cursor-not-allowed disabled:opacity-50",
             hasError ? "border-destructive" : "border-border",
           ].join(" ")}
         />

@@ -7,6 +7,7 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChan
   value: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   error?: string[];
+  hint?: string;
   required?: boolean;
 }
 
@@ -17,12 +18,16 @@ export function Input({
   value,
   onChange,
   error,
+  hint,
   required = false,
   type = "text",
   ...rest
 }: InputProps) {
   const hasError = error !== undefined && error.length > 0;
   const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy =
+    [hint ? hintId : null, hasError ? errorId : null].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className="flex flex-col gap-1">
@@ -36,6 +41,12 @@ export function Input({
         )}
       </label>
 
+      {hint && !hasError && (
+        <p id={hintId} className="text-xs text-secondary">
+          {hint}
+        </p>
+      )}
+
       <input
         id={id}
         name={name}
@@ -44,7 +55,7 @@ export function Input({
         onChange={onChange}
         required={required}
         aria-required={required}
-        aria-describedby={hasError ? errorId : undefined}
+        aria-describedby={describedBy}
         aria-invalid={hasError}
         className={[
           "min-h-[44px] w-full rounded-md border px-3 py-2",

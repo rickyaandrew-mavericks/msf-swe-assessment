@@ -16,37 +16,32 @@ interface FileUploadListProps {
   files: File[];
   onChange: (files: File[]) => void;
   error?: string[];
+  disabled?: boolean;
 }
 
-export function FileUploadList({ files, onChange, error }: FileUploadListProps) {
+export function FileUploadList({ files, onChange, error, disabled = false }: FileUploadListProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const hasError = error !== undefined && error.length > 0;
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (disabled) return;
     const selected = Array.from(e.target.files ?? []);
-    const clientErrors: string[] = [];
     const valid: File[] = [];
 
     for (const file of selected) {
-      if (file.type !== ACCEPTED_MIME) {
-        clientErrors.push(`"${file.name}" is not a PDF and was not added.`);
-        continue;
-      }
-      if (file.size > MAX_SIZE_BYTES) {
-        clientErrors.push(`"${file.name}" exceeds the 10 MB limit and was not added.`);
-        continue;
-      }
+      if (file.type !== ACCEPTED_MIME) continue;
+      if (file.size > MAX_SIZE_BYTES) continue;
       valid.push(file);
     }
 
     const merged = [...files, ...valid].slice(0, MAX_FILES);
     onChange(merged);
 
-    // Reset input so the same file can be re-added after removal
     if (inputRef.current) inputRef.current.value = "";
   }
 
   function removeFile(index: number) {
+    if (disabled) return;
     onChange(files.filter((_, i) => i !== index));
   }
 
@@ -68,22 +63,24 @@ export function FileUploadList({ files, onChange, error }: FileUploadListProps) 
                 <span className="truncate font-medium text-foreground">{file.name}</span>
                 <span className="text-secondary shrink-0">{formatBytes(file.size)}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => removeFile(i)}
-                aria-label={`Remove ${file.name}`}
-                className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-secondary hover:text-destructive transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={() => removeFile(i)}
+                  aria-label={`Remove ${file.name}`}
+                  className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-secondary hover:text-destructive transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </li>
           ))}
         </ul>
       )}
 
-      {remaining > 0 && (
+      {remaining > 0 && !disabled && (
         <div>
           <input
             ref={inputRef}
@@ -93,6 +90,7 @@ export function FileUploadList({ files, onChange, error }: FileUploadListProps) 
             multiple
             accept="application/pdf"
             onChange={handleFileChange}
+            disabled={disabled}
             className="sr-only"
             aria-label="Upload PDF documents"
           />
