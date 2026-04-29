@@ -12,6 +12,7 @@
 - [Tooling and Task Allocation](#tooling-and-task-allocation)
   - [Agents Deployed](#agents-deployed)
   - [Skills Utilized](#skills-utilized)
+  - [Context Optimization & Persistence](#context-optimization--persistence)
 - [Examples of Prompts and Instructions Given to the AI](#examples-of-prompts-and-instructions-given-to-the-ai)
   - [Prompt Template](#prompt-template)
   - [Example](#example)
@@ -203,6 +204,48 @@ This assessment, I utilized Claude Code, orchestrating a multi-agent system wher
 `security-review`: Identifying vulnerabilities like SQL injection, XSS, and insecure direct object references (IDOR).
 
 `ui-ux-pro-max`: Ensuring high-quality, accessible, and intuitive user interfaces and user experiences.
+
+### Context Optimization & Persistence
+
+To ensure high efficiency and minimize token consumption during long-running tasks, I utilized two complementary tools: `claude-mem` for cross-session memory persistence and `RTK (Rust Token Killer)` for aggressive in-session token compression.
+
+#### `claude-mem` — Persistent Memory Layer
+
+`claude-mem` acts as a persistent memory layer that allows the agent to store and retrieve key architectural decisions, complex requirements, and workspace-specific context without re-processing the entire codebase in every turn.
+
+**Benefits of using `claude-mem`:**
+- **Significant Token Savings:** By offloading static information and long-term memories to external storage, we avoid hitting the context limit and reduce the cost per interaction.
+- **Enhanced Continuity:** The agent maintains a "long-term memory" of past decisions, preventing repetitive questions and ensuring that implementation remains consistent with previously established patterns.
+- **Faster Response Times:** Smaller, more focused context windows result in faster inference and quicker turnarounds for complex queries.
+- **Improved Accuracy:** By surfacing only the most relevant memories for the current task, the agent is less likely to be distracted by irrelevant code or documentation.
+
+#### `RTK (Rust Token Killer)` — In-Session Token Compression
+
+`RTK` is a high-performance tool written in Rust that aggressively compresses and removes redundant tokens from the active context window during a session. Rather than preserving context, it actively kills unnecessary tokens — stripping verbose outputs, trimming repetitive structures, and compacting conversation history in real time.
+
+**Benefits of using `RTK`:**
+- **Aggressive In-Session Compression:** Reduces bloat within the current context window by eliminating tokens that no longer add value, keeping the working context lean and focused.
+- **Rust-Powered Performance:** The Rust implementation ensures compression runs fast without adding latency to the agent's response cycle.
+- **Extended Effective Context:** By continuously trimming the active window, RTK allows more meaningful content to remain in context for longer before hitting model limits.
+- **Lower Cost Per Session:** Fewer tokens in the context directly reduces inference cost on every subsequent turn within the same session.
+
+#### How `claude-mem` and `RTK` Complement Each Other
+
+The two tools operate at different layers and reinforce each other:
+
+| | `claude-mem` | `RTK` |
+|---|---|---|
+| **Scope** | Cross-session (persists between conversations) | In-session (compresses within a conversation) |
+| **Strategy** | Store and retrieve selectively | Compress and discard aggressively |
+| **What it protects** | Important decisions, architecture, requirements | Active working context |
+
+Together, they form a two-layer token efficiency strategy:
+
+1. `RTK` continuously kills redundant tokens within the active session, keeping the context window slim.
+2. Anything worth preserving beyond the current session is saved to `claude-mem` before it gets compressed away.
+3. In the next session, `claude-mem` resurfaces only the relevant stored context — so `RTK` starts the new session with a clean, focused window rather than a bloated one.
+
+The result is a compounding efficiency gain: RTK reduces intra-session cost, claude-mem eliminates cross-session re-derivation cost, and together they prevent either layer from becoming a bottleneck.
 
 ## Examples of Prompts and Instructions Given to the AI
 
