@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { LICENCE_TYPES, GENDERS } from "./applicationOptions";
+import { APPLICATION_STATUSES } from "@/types/application";
 import type { ApplicationFormValues } from "@/types/application";
+
+export const applicationStatusSchema = z.enum(APPLICATION_STATUSES);
 
 // Kept in sync with backend/src/utils/applicationSchema.ts.
 // Frontend validates raw form state: boolean declarations, string yearsInOperation.

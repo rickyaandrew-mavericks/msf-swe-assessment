@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import Link from "next/link";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
@@ -37,7 +38,7 @@ export function ApplicationForm() {
   const [documents, setDocuments] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
-  const [successId, setSuccessId] = useState<string | null>(null);
+  const [successData, setSuccessData] = useState<{ id: string; status: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function setField<K extends keyof ApplicationFormValues>(
@@ -115,7 +116,7 @@ export function ApplicationForm() {
             setErrors({ _root: ["An unexpected error occurred. Please try again."] });
             return;
           }
-          setSuccessId(result.id);
+          setSuccessData({ id: result.id, status: result.status });
           return;
         }
 
@@ -138,7 +139,7 @@ export function ApplicationForm() {
     });
   }
 
-  if (successId !== null) {
+  if (successData !== null) {
     return (
       <div
         role="status"
@@ -159,13 +160,21 @@ export function ApplicationForm() {
             review your submission and contact you at the email address provided.
           </p>
         </div>
-        <div className="rounded-md bg-muted border border-border px-5 py-3 text-sm">
-          <span className="text-secondary">Reference number: </span>
-          <span className="font-mono font-semibold text-primary">{successId}</span>
+        <div className="rounded-md bg-muted border border-border px-5 py-3 text-sm text-left w-full max-w-sm">
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-secondary">Reference number:</span>
+            <span className="font-mono font-semibold text-primary">{successData.id}</span>
+          </div>
         </div>
         <p className="text-xs text-secondary">
           Please save your reference number for future correspondence.
         </p>
+        <Link
+          href={`/application/${successData.id}`}
+          className="inline-flex items-center justify-center min-h-[44px] px-5 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-secondary transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        >
+          View Application
+        </Link>
       </div>
     );
   }

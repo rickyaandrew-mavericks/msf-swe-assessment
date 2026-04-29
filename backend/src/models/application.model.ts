@@ -59,7 +59,7 @@ export class ApplicationModel extends Model {
   @Column({ type: DataType.BOOLEAN, allowNull: false })
   declare declarationConsent: boolean;
 
-  @Column({ type: DataType.STRING(30), allowNull: false, defaultValue: "submitted" })
+  @Column({ type: DataType.STRING(30), allowNull: false, defaultValue: "pending_pre_site_resubmission" })
   declare status: ApplicationStatus;
 
   @CreatedAt

@@ -7,7 +7,12 @@ import { ApplicationModel } from "../models/application.model.js";
 import { ApplicationDocument } from "../models/applicationDocument.model.js";
 import { applicationUploadDir, safeFilename } from "../utils/upload.js";
 import type { CreateApplicationBody } from "../utils/applicationSchema.js";
-import type { ApplicationDocumentMetadata } from "../types/application.js";
+import type {
+  Application,
+  ApplicationDetail,
+  ApplicationDocumentInfo,
+  ApplicationDocumentMetadata,
+} from "../types/application.js";
 
 export type CreateApplicationResult = {
   id: string;
@@ -85,7 +90,7 @@ export async function createApplication(
         licenceType: body.licenceType,
         declarationAccuracy: body.declarationAccuracy,
         declarationConsent: body.declarationConsent,
-        status: "submitted",
+        status: "pending_pre_site_resubmission",
       },
       { transaction }
     );
@@ -119,4 +124,71 @@ export async function createApplication(
       await fsp.rm(tmpPath, { force: true }).catch(() => undefined);
     }
   }
+}
+
+export async function getApplications(): Promise<Application[]> {
+  const models = await ApplicationModel.findAll({
+    order: [["createdAt", "DESC"]],
+  });
+  return models.map((m) => ({
+    id: m.id,
+    fullName: m.fullName,
+    nricOrPassport: m.nricOrPassport,
+    dateOfBirth: m.dateOfBirth,
+    gender: m.gender,
+    nationality: m.nationality,
+    contactNumber: m.contactNumber,
+    email: m.email,
+    homeAddress: m.homeAddress,
+    businessName: m.businessName,
+    businessAddress: m.businessAddress,
+    yearsInOperation: m.yearsInOperation,
+    licenceType: m.licenceType,
+    declarationAccuracy: m.declarationAccuracy,
+    declarationConsent: m.declarationConsent,
+    status: m.status,
+    createdAt: m.createdAt,
+    updatedAt: m.updatedAt,
+  }));
+}
+
+export async function getApplicationById(
+  id: string
+): Promise<ApplicationDetail | null> {
+  const model = await ApplicationModel.findOne({
+    where: { id },
+    include: [ApplicationDocument],
+  });
+  if (model === null) return null;
+
+  const documents: ApplicationDocumentInfo[] = (model.documents ?? []).map(
+    (doc) => ({
+      id: doc.id,
+      originalName: doc.originalName,
+      mimeType: doc.mimeType,
+      sizeBytes: doc.sizeBytes,
+    })
+  );
+
+  return {
+    id: model.id,
+    fullName: model.fullName,
+    nricOrPassport: model.nricOrPassport,
+    dateOfBirth: model.dateOfBirth,
+    gender: model.gender,
+    nationality: model.nationality,
+    contactNumber: model.contactNumber,
+    email: model.email,
+    homeAddress: model.homeAddress,
+    businessName: model.businessName,
+    businessAddress: model.businessAddress,
+    yearsInOperation: model.yearsInOperation,
+    licenceType: model.licenceType,
+    declarationAccuracy: model.declarationAccuracy,
+    declarationConsent: model.declarationConsent,
+    status: model.status,
+    createdAt: model.createdAt,
+    updatedAt: model.updatedAt,
+    documents,
+  };
 }
